@@ -1,0 +1,26 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  terraform:
+    runs-on: ubuntu-lates
+    defaults:
+      run:
+        working-directory: ./deploy/kubernetes/terraform
+    steps:
+
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.1.7"
+
+    - name: Terraform Destroy
+      run: |
+        terraform destroy
+      env:
+        TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}

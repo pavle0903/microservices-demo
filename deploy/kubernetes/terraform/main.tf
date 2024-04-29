@@ -1,136 +1,56 @@
-provider "aws" {
-  region = "${var.aws_region}"
-}
-
-resource "aws_security_group" "k8s-security-group" {
-  name        = "md-k8s-security-group"
-  description = "allow all internal traffic, ssh, http from anywhere"
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    self        = "true"
-  }
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 9411
-    to_port     = 9411
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 30001
-    to_port     = 30001
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port   = 30002
-    to_port     = 30002
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-   from_port   = 31601
-   to_port     = 31601
-   protocol    = "tcp"
-   cidr_blocks = ["0.0.0.0/0"]
- }
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "4.51.0"
+    }
   }
 }
 
-resource "aws_instance" "ci-sockshop-k8s-master" {
-  instance_type   = "${var.master_instance_type}"
-  ami             = "${lookup(var.aws_amis, var.aws_region)}"
-  key_name        = "${var.key_name}"
-  security_groups = ["${aws_security_group.k8s-security-group.name}"]
-  tags {
-    Name = "ci-sockshop-k8s-master"
-  }
+provider "google" {
+  credentials = var.service_account_key
+  project     = "devops-t1-t2"
+  region      = "us-central1"
+  zone        = "us-central1-a"
+}
 
-  connection {
-    user = "ubuntu"
-    private_key = "${file("${var.private_key_path}")}"
-  }
+resource "google_compute_network" "vpc" {
+  name                    = "t1-t2-vpc"
+  auto_create_subnetworks = false
+}
 
-  provisioner "file" {
-    source = "deploy/kubernetes/manifests"
-    destination = "/tmp/"
-  }
+resource "google_compute_subnetwork" "t1-t2-subnet" {
+  name          = "t1t2-subnet"
+  region        = "us-central1"
+  network       = google_compute_network.vpc.id
+  ip_cidr_range = "10.0.0.0/24"
+}
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-      "sudo echo \"deb http://apt.kubernetes.io/ kubernetes-xenial main\" | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get update",
-      "sudo apt-get install -y docker.io",
-      "sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni"
+resource "google_service_account" "gke-sa" {
+  account_id   = "gke-service-account-id"
+  display_name = "GKE Service Account"
+}
+
+resource "google_container_cluster" "pavle-cluster" {
+  name                     = "gke-cluster"
+  location                 = "us-central1"
+  remove_default_node_pool = true
+  initial_node_count       = 1
+}
+
+resource "google_container_node_pool" "pavle_preemptible_nodes" {
+  name       = "my-node-pool"
+  location   = "us-central1"
+  cluster    = google_container_cluster.pavle-cluster.name
+  node_count = 1
+
+  node_config {
+    preemptible  = true
+    machine_type = "e2-medium"
+
+    service_account = google_service_account.gke-sa.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
     ]
   }
 }
-
-resource "aws_instance" "ci-sockshop-k8s-node" {
-  instance_type   = "${var.node_instance_type}"
-  count           = "${var.node_count}"
-  ami             = "${lookup(var.aws_amis, var.aws_region)}"
-  key_name        = "${var.key_name}"
-  security_groups = ["${aws_security_group.k8s-security-group.name}"]
-  tags {
-    Name = "ci-sockshop-k8s-node"
-  }
-
-  connection {
-    user = "ubuntu"
-    private_key = "${file("${var.private_key_path}")}"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -",
-      "sudo echo \"deb http://apt.kubernetes.io/ kubernetes-xenial main\" | sudo tee --append /etc/apt/sources.list.d/kubernetes.list",
-      "sudo apt-get update",
-      "sudo apt-get install -y docker.io",
-      "sudo apt-get install -y kubelet kubeadm kubectl kubernetes-cni",
-      "sudo sysctl -w vm.max_map_count=262144"
-    ]
-  }
-}
-
-resource "aws_elb" "ci-sockshop-k8s-elb" {
-  depends_on = [ "aws_instance.ci-sockshop-k8s-node" ]
-  name = "ci-sockshop-k8s-elb"
-  instances = ["${aws_instance.ci-sockshop-k8s-node.*.id}"]
-  availability_zones = ["${data.aws_availability_zones.available.names}"]
-  security_groups = ["${aws_security_group.k8s-security-group.id}"] 
-  listener {
-    lb_port = 80
-    instance_port = 30001
-    lb_protocol = "http"
-    instance_protocol = "http"
-  }
-
-  listener {
-    lb_port = 9411
-    instance_port = 30002
-    lb_protocol = "http"
-    instance_protocol = "http"
-  }
-
-}
-
