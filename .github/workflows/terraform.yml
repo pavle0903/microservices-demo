@@ -43,6 +43,6 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply --auto-approve
+          terraform apply -auto-approve
         env:
           TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
