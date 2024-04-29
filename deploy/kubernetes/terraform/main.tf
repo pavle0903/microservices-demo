@@ -5,6 +5,11 @@ terraform {
       version = "4.51.0"
     }
   }
+
+  backend "gcs" {
+    bucket = "t1-t2-tf-backend"
+    prefix = "devops-t1-t2"
+  }
 }
 
 provider "google" {
