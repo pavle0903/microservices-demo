@@ -17,6 +17,9 @@ jobs:
           service_account_key: /home/psarenac/actions-runner/gcp_key.json
           export_default_credentials: true
 
+      - name: Install kubectl
+        run: gcloud components install kubectl --quiet
+
       - name: Authenticate with GKE Cluster
         run: gcloud container clusters get-credentials pavle-cluster --region us-central1 --project t2-plan
 
