@@ -51,7 +51,7 @@ resource "google_container_node_pool" "pavle_preemptible_nodes" {
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
     service_account = google_service_account.gke-sa.email
     oauth_scopes    = [
-      "https://www.googleapis.com/auth/cloud-platform"
+      "https://www.googleapis.com/auth/cloud-platform.read-only"
     ]
   }
 }
@@ -59,7 +59,7 @@ resource "google_container_node_pool" "pavle_preemptible_nodes" {
 resource "google_project_iam_binding" "gke_sa_admin_binding" {
   project = "t2-plan"
 
-  role    = "roles/iam.serviceAccountTokenCreator"
+  role    = "roles/container.admin"
 
   members = [
     "serviceAccount:${google_service_account.gke-sa.email}",
