@@ -3,7 +3,7 @@ name: deploy-test
 on:
   push:
     branches:
-    - "*"  # run for branches
+    - "*"  
 
 jobs:
   deploy:
