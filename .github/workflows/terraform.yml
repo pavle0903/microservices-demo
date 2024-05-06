@@ -37,7 +37,7 @@ jobs:
 
       - name: Terraform Plan
         run: |
-          terraform plan
+          terraform plan -out=tfplan
         # env:
         #   TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
