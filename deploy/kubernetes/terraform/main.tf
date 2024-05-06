@@ -8,8 +8,8 @@ terraform {
 }
 
 provider "google" {
-  credentials = var.service_account_key
-  project     = "devops-t1-t2"
+  credentials = "${var.service_account_key}"
+  project     = "t2-plan"
   region      = "us-central1"
   zone        = "us-central1-a"
 }
