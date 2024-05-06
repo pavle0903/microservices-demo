@@ -46,10 +46,10 @@ resource "google_container_node_pool" "pavle_preemptible_nodes" {
 
   node_config {
     preemptible  = true
-    machine_type = "e2-small"
+    machine_type = "e2-medium"
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = google_service_account.default.email
+    service_account = google_service_account.gke-sa.email
     oauth_scopes    = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
