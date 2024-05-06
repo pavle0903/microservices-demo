@@ -43,7 +43,7 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply -auto-approve > terraform_apply.log 2>&1
+          terraform apply -input=false tfplan > terraform_apply.log 2>&1
       
       - name: Terraform logs display
         run: cat terraform_apply.log
