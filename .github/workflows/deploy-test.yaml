@@ -6,22 +6,21 @@ on:
     - "*"  # run for branches
 
 jobs:
-  #
-  #
-  #check complete demo is in sync with individual manifest, it should block fom merge. Should this be a diferent file?
-  complete-demo-sync-check:
+  deploy:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v2
-      
-      # - name: Wait cluster to start
-      #   run: |
-      #     until [ "$(kubectl get pods -A --no-headers | grep -cEv '([0-9]+)/\1')" -eq 0 ]; do
-      #         sleep 5s
-      #     done
-      #     kubectl get pod -A
-      - name: Run and test Complete demo
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@master
+        with:
+          project_id: "t2-plan"
+          service_account_key: /home/psarenac/actions-runner/gcp_key.json
+          export_default_credentials: true
+
+      - name: Authenticate with GKE Cluster
+        run: gcloud container clusters get-credentials pavle-cluster --region us-central1 --project t2-plan
+
+      - name: Deploy Application to GKE
         run: |
           kubectl apply -f deploy/kubernetes/complete-demo.yaml
           until [ "$(kubectl get pods -n sock-shop --no-headers | grep -cEv '([0-9]+)/\1')" -eq 0 ]; do
@@ -30,3 +29,27 @@ jobs:
               kubectl describe node | grep "Allocated resources" -A 10
           done
           kubectl get pod -A
+  #
+  #
+  #check complete demo is in sync with individual manifest, it should block fom merge. Should this be a diferent file?
+  # complete-demo-sync-check:
+  #   runs-on: self-hosted
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+      
+  #     # - name: Wait cluster to start
+  #     #   run: |
+  #     #     until [ "$(kubectl get pods -A --no-headers | grep -cEv '([0-9]+)/\1')" -eq 0 ]; do
+  #     #         sleep 5s
+  #     #     done
+  #     #     kubectl get pod -A
+  #     - name: Run and test Complete demo
+  #       run: |
+  #         kubectl apply -f deploy/kubernetes/complete-demo.yaml
+  #         until [ "$(kubectl get pods -n sock-shop --no-headers | grep -cEv '([0-9]+)/\1')" -eq 0 ]; do
+  #             sleep 5s
+  #             kubectl get pods -n sock-shop
+  #             kubectl describe node | grep "Allocated resources" -A 10
+  #         done
+  #         kubectl get pod -A
