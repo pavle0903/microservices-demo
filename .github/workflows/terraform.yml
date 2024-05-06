@@ -38,11 +38,11 @@ jobs:
       - name: Terraform Plan
         run: |
           terraform plan
-        env:
-          TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        # env:
+        #   TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Terraform Apply
         run: |
           terraform apply -auto-approve
-        env:
-          TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        # env:
+        #   TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
