@@ -57,7 +57,7 @@ resource "google_container_node_pool" "pavle_preemptible_nodes" {
 }
 
 resource "google_project_iam_binding" "gke_sa_admin_binding" {
-  project = t2-plan
+  project = "t2-plan"
 
   role    = "roles/container.admin"
 
