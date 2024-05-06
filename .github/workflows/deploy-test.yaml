@@ -20,6 +20,9 @@ jobs:
       - name: Install kubectl
         run: gcloud components install kubectl --quiet
 
+      - name: Grant k8s role to svc account
+        run: gcloud projects add-iam-policy-binding t2-plan --member=serviceAccount:gke-service-account-id@t2-plan.iam.gserviceaccount.com --role=roles/container.viewer
+
       - name: Authenticate with GKE Cluster
         run: gcloud container clusters get-credentials pavle-cluster --region us-central1 --project t2-plan
 
