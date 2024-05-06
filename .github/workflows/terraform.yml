@@ -25,10 +25,6 @@ jobs:
 
       - name: Terraform Init
         run: |
-          ls
-          ls ..
-          echo "--------"
-          ls ../..
           terraform init
       
       - name: Terraform Format
