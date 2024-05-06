@@ -43,9 +43,9 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply -input=false tfplan > terraform_apply.log 2>&1
+          terraform apply -input=false tfplan
       
-      - name: Terraform logs display
-        run: cat terraform_apply.log
+      # - name: Terraform logs display
+      #   run: cat terraform_apply.log
         # env:
         #   TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
