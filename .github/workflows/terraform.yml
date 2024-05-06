@@ -43,6 +43,9 @@ jobs:
 
       - name: Terraform Apply
         run: |
-          terraform apply -auto-approve
+          terraform apply -auto-approve > terraform_apply.log 2>&1
+      
+      - name: Terraform logs display
+        run: cat terraform_apply.log
         # env:
         #   TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
