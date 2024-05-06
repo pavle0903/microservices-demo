@@ -13,15 +13,15 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # - name: Authenticate to GCP
-      #   uses:  google-github-actions/auth@v1
-      #   with:
-      #     credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+      - name: Export key for backend
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
+
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.0.9"
+          terraform_version: "1.1.7"
 
       - name: Terraform Init
         run: |
