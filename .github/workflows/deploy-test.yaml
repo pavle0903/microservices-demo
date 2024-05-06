@@ -20,8 +20,8 @@ jobs:
       - name: Install kubectl
         run: gcloud components install kubectl --quiet
 
-      # - name: Authenticate with GKE Cluster
-      #   run: gcloud container clusters get-credentials pavle-cluster --region=us-central1
+      - name: Authenticate with GKE Cluster
+        run: gcloud container clusters get-credentials pavle-cluster --region=us-central1
 
       - name: Deploy Application to GKE
         run: |
