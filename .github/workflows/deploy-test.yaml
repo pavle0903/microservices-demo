@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Set up Google Cloud CLI
-        uses: google-github-actions/setup-gcloud@master
+        uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: "t2-plan"
           service_account_key: /home/psarenac/actions-runner/gcp_key.json
