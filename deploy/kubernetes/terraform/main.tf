@@ -26,3 +26,14 @@ resource "google_compute_subnetwork" "subnetwork" {
     ip_cidr_range = "10.0.0.0/24"
 }
 
+resource "google_service_account" "gke-sa" {
+  account_id   = "gke-service-account-id"
+  display_name = "GKE Service Account"
+}
+
+resource "google_container_cluster" "pavle-cluster" {
+  name                     = "gke-cluster"
+  location                 = "us-central1"
+  remove_default_node_pool = true
+  initial_node_count       = 1
+}
