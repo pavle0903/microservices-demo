@@ -15,7 +15,7 @@ jobs:
 
       - name: Export key for backend
         run: |
-          ls /home/psarenac/actions-runner/
+          export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
 
 
       - name: Setup Terraform
