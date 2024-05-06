@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "google" {
-  credentials = "${var.service_account_key}"
+  credentials = file("/home/psarenac/actions-runner/gcp_key.json")
   project     = "t2-plan"
   region      = "us-central1"
   zone        = "us-central1-a"
