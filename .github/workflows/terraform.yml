@@ -30,7 +30,6 @@ jobs:
 
       - name: Terraform Init
         run: |
-          export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
           terraform init
       
       - name: Terraform Format
@@ -43,13 +42,13 @@ jobs:
 
       - name: Terraform Plan
         run: |
-          terraform plan -out=tfplan
+          terraform plan -out=tfplan -lock=false
         # env:
         #   TF_VAR_service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Terraform Apply
         run: |
-          terraform apply -input=false tfplan
+          terraform apply -input=false tfplan -lock=false
       
       # - name: Terraform logs display
       #   run: cat terraform_apply.log
