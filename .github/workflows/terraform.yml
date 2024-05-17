@@ -30,6 +30,7 @@ jobs:
 
       - name: Terraform Init
         run: |
+          export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
           terraform init
       
       - name: Terraform Format
