@@ -16,6 +16,7 @@ jobs:
       - name: Export key for backend
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
+          echo $GOOGLE_APPLICATION_CREDENTIALS
 
       - name: Install Node
         uses: actions/setup-node@v4
@@ -29,7 +30,7 @@ jobs:
 
       - name: Terraform Init
         run: |
-          terraform init -reconfigure
+          terraform init
       
       - name: Terraform Format
         run: |
