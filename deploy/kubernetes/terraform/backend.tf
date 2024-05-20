@@ -1,6 +1,7 @@
 terraform {
   backend "gcs" {
-    bucket = "t2-backend"
-    prefix = "terraform/state"
-}
+    bucket      = "t2-backend"
+    prefix      = "terraform/state"
+    credentials = "/home/psarenac/actions-runner/gcp_key.json"
+  }
 }
