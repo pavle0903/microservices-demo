@@ -14,8 +14,8 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
         with:
           project_id: "t2-plan"
-          service_account_key: /home/psarenac/actions-runner/gcp_key.json
-          export_default_credentials: true
+          # service_account_key: /home/psarenac/actions-runner/gcp_key.json
+          # export_default_credentials: true
 
       - name: Install kubectl
         run: gcloud components install kubectl --quiet
