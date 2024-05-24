@@ -20,6 +20,9 @@ jobs:
       - name: Install kubectl
         run: gcloud components install kubectl --quiet
 
+      - name: Export key for backend
+        run: export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
+
       - name: Authenticate with GKE Cluster
         run: gcloud container clusters get-credentials pavle-cluster --region=us-central1
 
