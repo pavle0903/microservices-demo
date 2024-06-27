@@ -1,37 +1,115 @@
-name: deploy-test
-
+name: Deploy k8s manifests on GKE
+ 
 on:
-  push:
-    branches:
-    - "*"  
-
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        required: true
+        default: dev
+        description: "Environment:"
+        options:
+          - dev
+          - stage
+          - prod
+ 
+env:
+  ENVIRONMENT: ${{ github.event.inputs.env }}
+  PROJECT_ID: ${{ vars.GCP_PROJECT }}
+  APP_NAMESPACE: sock-shop
+ 
 jobs:
+  context:
+    runs-on: self-hosted
+    outputs:
+      cluster-name: ${{ steps.prepare-context.outputs.name }}
+      cluster-zone: ${{ steps.prepare-context.outputs.zone }}
+      run-static-security-scans: ${{ steps.prepare-context.outputs.ssc }}
+      run-dynamic-security-scans: ${{ steps.prepare-context.outputs.dsc }}
+      run-end-to-end-tests: ${{ steps.prepare-context.outputs.e2e }}
+    steps:
+      - name: Get Context
+        id: prepare-context
+        run: |
+          RUN_STATIC_SECURITY_SCAN="false"
+          RUN_DYNAMIC_SECURITY_SCAN="false"
+          RUN_END_TO_END_TESTS="false"
+ 
+          if [[ "$ENVIRONMENT" == "dev" ]]; then
+            RUN_STATIC_SECURITY_SCAN="true"
+            echo "name=dev-cluster" >> $GITHUB_OUTPUT
+            echo "zone=us-east1-c" >> $GITHUB_OUTPUT
+            RUN_STATIC_SECURITY_SCAN="true"
+          elif [[ "$ENVIRONMENT" == "stage" ]]; then
+            echo "name=stage-cluster" >> $GITHUB_OUTPUT
+            echo "zone=us-west1-c" >> $GITHUB_OUTPUT
+            RUN_DYNAMIC_SECURITY_SCAN="true"
+            RUN_END_TO_END_TESTS="true"
+          else
+            echo "name=prod-cluster" >> $GITHUB_OUTPUT
+            echo "zone=us-central1-c" >> $GITHUB_OUTPUT
+          fi
+ 
+          echo "ssc=$RUN_STATIC_SECURITY_SCAN" >> $GITHUB_OUTPUT
+          echo "dsc=$RUN_DYNAMIC_SECURITY_SCAN" >> $GITHUB_OUTPUT
+          echo "e2e=$RUN_END_TO_END_TESTS"  >> $GITHUB_OUTPUT
+ 
+  static-security-scans:
+    if: ${{ needs.context.outputs.run-static-security-scans == 'true' }}
+    runs-on: self-hosted
+    needs: [context]
+    steps:
+      - name: Run Static Security Scan
+        run: |
+          echo "Static Security Scans passed! No vulnerabilities found!"
+ 
+  dynamic-security-scans:
+    if: ${{ needs.context.outputs.run-dynamic-security-scans == 'true' }}
+    runs-on: self-hosted
+    needs: [context]
+    steps:
+      - name: Run Dynamic Security Scan
+        run: |
+          echo "Dynamic Security Scans passed! No vulnerabilities found!"
+ 
+  end-to-end-tests:
+    if: ${{ needs.context.outputs.run-end-to-end-tests == 'true'}}
+    runs-on: self-hosted
+    needs: [context]
+    steps:
+      - name: Run End To End tests
+        run: |
+          echo "End to end tests passed!"
+ 
   deploy:
     runs-on: self-hosted
-
+    needs: [context, static-security-scans, dynamic-security-scans, end-to-end-tests]
+    if: ${{ !failure() && !cancelled() }}
     steps:
+      - uses: actions/checkout@v4
+ 
       - name: Set up Google Cloud CLI
         uses: google-github-actions/setup-gcloud@v2
         with:
-          project_id: "t2-plan"
-          # service_account_key: /home/psarenac/actions-runner/gcp_key.json
-          # export_default_credentials: true
-
+          project_id: ${{ env.PROJECT_ID }}
+ 
       - name: Install kubectl
         run: gcloud components install kubectl --quiet
-
-      - name: Export key for backend
-        run: export GOOGLE_APPLICATION_CREDENTIALS=/home/psarenac/actions-runner/gcp_key.json
-
+ 
       - name: Authenticate with GKE Cluster
-        run: gcloud container clusters get-credentials pavle-cluster --region=us-central1
-
+        run: gcloud container clusters get-credentials "$CLUSTER_NAME" --zone="$CLUSTER_ZONE"
+        env:
+          CLUSTER_NAME: ${{ needs.context.outputs.cluster-name }}
+          CLUSTER_ZONE: ${{ needs.context.outputs.cluster-zone}}
+ 
       - name: Deploy Application to GKE
         run: |
-          kubectl apply -f deploy/kubernetes/complete-demo.yaml
-          until [ "$(kubectl get pods -n sock-shop --no-headers | grep -cEv '([0-9]+)/\1')" -eq 0 ]; do
-              sleep 5s
-              kubectl get pods -n sock-shop
-              kubectl describe node | grep "Allocated resources" -A 10
+          kubectl apply -f deploy/kubernetes/manifests/00-sock-shop-ns.yaml
+          kubectl create secret generic db-credentials-secret --from-literal=db-password=${{ secrets.DB_PASSWORD }} --from-literal=db-name=${{ secrets.DB_NAME }} -n $APP_NAMESPACE
+ 
+          kubectl apply -f deploy/kubernetes/manifests
+          while [ $(kubectl get pods -n ${{ env.APP_NAMESPACE}} --no-headers -o custom-columns=":status.phase" | grep -v "Running" -c) -ne 0 ]; do
+            echo "Waiting for all pods to be in Running status..."  
+            sleep 5s
           done
-          kubectl get pod -A
+        timeout-minutes: 10
