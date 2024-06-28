@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,8 +27,8 @@ spec:
           - name: MYSQL_DATABASE
             valueFrom:
               secretKeyRef:
-              name: db-credentials-secret
-              key: db-name
+                name: db-credentials-secret
+                key: db-name
         ports:
         - name: mysql
           containerPort: 3306
