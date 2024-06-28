@@ -9,7 +9,7 @@ terraform {
 
 provider "google" {
   credentials = file("/home/psarenac/actions-runner/gcp_key.json")
-  project     = "t2-plan"
+  project     = "t1-t2-plan"
   region      = "us-central1"
   zone        = "us-central1-a"
 }
