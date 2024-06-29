@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: basic-ingress
+  namespace: sock-shop
 spec:
   rules:
   - host: pavle9.com
