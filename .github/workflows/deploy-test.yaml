@@ -112,4 +112,7 @@ jobs:
             echo "Waiting for all pods to be in Running status..."  
             sleep 5s
           done
+
+          kubectl apply -f deploy/kubernetes/manifests-monitoring
+          kubectl apply -f deploy/kubernetes/manifests-logging
         timeout-minutes: 10
