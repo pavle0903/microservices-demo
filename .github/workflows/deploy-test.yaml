@@ -123,14 +123,14 @@ jobs:
 
           # Create namespaces
           kubectl create namespace loki || true
-         # kubectl create namespace tempo || true
+          # kubectl create namespace tempo || true
           kubectl create namespace prometheus || true
-        #  kubectl create namespace otel || true
+          # kubectl create namespace otel || true
 
           # Add helm repos
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo add grafana https://grafana.github.io/helm-charts
-         # helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
           helm repo update
 
 
@@ -144,8 +144,8 @@ jobs:
           # helm -n tempo upgrade --install tempo grafana/tempo-distributed -f tempo_values.yaml || handle_installation_error "tempo"
 
           # # Install loki
-          echo "Installing loki..."
-          helm upgrade --install --namespace loki logging grafana/loki -f loki_values.yaml --set loki.auth_enabled=false || handle_installation_error "loki"
+          # echo "Installing loki..."
+          # helm upgrade --install --namespace loki logging grafana/loki -f loki_values.yaml --set loki.auth_enabled=false || handle_installation_error "loki"
 
           # Install Grafana
           echo "Installing Grafana..."
