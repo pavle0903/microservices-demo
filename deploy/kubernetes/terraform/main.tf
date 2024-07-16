@@ -21,7 +21,7 @@ resource "google_compute_network" "vpc" {
 }
 
 module "dev-subnet" {
-  source        = "./modules/subnet"
+  source        = "./modules/subnetwork"
   name          = "dev-subnet"
   region        = var.dev_region
   network       = google_compute_network.vpc.id
@@ -29,7 +29,7 @@ module "dev-subnet" {
 }
 
 module "stage-subnet" {
-  source        = "./modules/subnet"
+  source        = "./modules/subnetwork"
   name          = "stage-subnet"
   region        = var.stage_region
   network       = google_compute_network.vpc.id
@@ -37,7 +37,7 @@ module "stage-subnet" {
 }
 
 module "prod-subnet" {
-  source        = "./modules/subnet"
+  source        = "./modules/subnetwork"
   name          = "prod-subnet"
   region        = var.prod_region
   network       = google_compute_network.vpc.id
@@ -50,7 +50,7 @@ resource "google_service_account" "gke-sa" {
 }
 
 module "dev-cluster" {
-  source     = "./modules/gke_cluster"
+  source     = "./modules/gke"
   name       = "dev-cluster"
   location   = var.dev_zone
   network    = google_compute_network.vpc.self_link
@@ -72,7 +72,7 @@ module "dev_preemptible_nodes" {
 }
 
 module "stage-cluster" {
-  source     = "./modules/gke_cluster"
+  source     = "./modules/gke"
   name       = "stage-cluster"
   location   = var.stage_zone
   network    = google_compute_network.vpc.self_link
@@ -93,7 +93,7 @@ module "stage_preemptible_nodes" {
 }
 
 module "prod-cluster" {
-  source     = "./modules/gke_cluster"
+  source     = "./modules/gke"
   name       = "prod-cluster"
   location   = var.prod_zone
   network    = google_compute_network.vpc.self_link
