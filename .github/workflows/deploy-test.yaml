@@ -27,6 +27,7 @@ jobs:
       run-static-security-scans: ${{ steps.prepare-context.outputs.ssc }}
       run-dynamic-security-scans: ${{ steps.prepare-context.outputs.dsc }}
       run-end-to-end-tests: ${{ steps.prepare-context.outputs.e2e }}
+      domain: ${{ steps.prepare-context.outputs.domain }}
     steps:
       - name: Get Context
         id: prepare-context
@@ -39,15 +40,18 @@ jobs:
             RUN_STATIC_SECURITY_SCAN="true"
             echo "name=dev-cluster" >> $GITHUB_OUTPUT
             echo "zone=us-east1-c" >> $GITHUB_OUTPUT
+            echo "domain=dev.pavle9.com" >> $GITHUB_OUTPUT
             RUN_STATIC_SECURITY_SCAN="true"
           elif [[ "$ENVIRONMENT" == "stage" ]]; then
             echo "name=stage-cluster" >> $GITHUB_OUTPUT
             echo "zone=us-west1-c" >> $GITHUB_OUTPUT
+            echo "domain=stage.pavle9.com" >> $GITHUB_OUTPUT
             RUN_DYNAMIC_SECURITY_SCAN="true"
             RUN_END_TO_END_TESTS="true"
           else
             echo "name=prod-cluster" >> $GITHUB_OUTPUT
             echo "zone=us-central1-c" >> $GITHUB_OUTPUT
+            echo "domain=pavle9.com" >> $GITHUB_OUTPUT
           fi
  
           echo "ssc=$RUN_STATIC_SECURITY_SCAN" >> $GITHUB_OUTPUT
@@ -109,6 +113,7 @@ jobs:
  
       - name: Deploy Application to GKE
         run: |
+          sed "s/host: .*/host: ${DOMAIN_NAME}/" deploy/kubernetes/manifests/29-ingress.yaml
           kubectl apply -f deploy/kubernetes/manifests/00-sock-shop-ns.yaml
           kubectl create secret generic db-credentials-secret --from-literal=db-password=${{ secrets.DB_PASSWORD }} --from-literal=db-name=${{ secrets.DB_NAME }} -n $APP_NAMESPACE
  
@@ -134,3 +139,5 @@ jobs:
           # helm upgrade --install --namespace loki logging grafana/loki -f loki_values.yaml --set loki.auth_enabled=false || handle_installation_error "loki"
           helm upgrade --install --namespace=loki loki-grafana grafana/grafana --set service.type=LoadBalancer || handle_installation_error "grafana"
         timeout-minutes: 10
+        env:
+          DOMAIN_NAME: ${{ needs.context.outputs.domain }}

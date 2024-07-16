@@ -20,25 +20,28 @@ resource "google_compute_network" "vpc" {
   routing_mode = "GLOBAL"
 }
 
-resource "google_compute_subnetwork" "dev-subnet" {
-    name = "subnetwork"
-    region = "us-east1"
-    network = google_compute_network.vpc.id
-    ip_cidr_range = "10.0.0.0/24"
+module "dev-subnet" {
+  source        = "./modules/subnet"
+  name          = "dev-subnet"
+  region        = var.dev_region
+  network       = google_compute_network.vpc.id
+  ip_cidr_range = "10.0.0.0/24"
 }
 
-resource "google_compute_subnetwork" "stage-subnet" {
-    name = "subnetwork"
-    region = "us-west1"
-    network = google_compute_network.vpc.id
-    ip_cidr_range = "10.0.1.0/24"
+module "stage-subnet" {
+  source        = "./modules/subnet"
+  name          = "stage-subnet"
+  region        = var.stage_region
+  network       = google_compute_network.vpc.id
+  ip_cidr_range = "10.0.1.0/24"
 }
 
-resource "google_compute_subnetwork" "prod-subnet" {
-    name = "subnetwork"
-    region = "us-central1"
-    network = google_compute_network.vpc.id
-    ip_cidr_range = "10.0.2.0/24"
+module "prod-subnet" {
+  source        = "./modules/subnet"
+  name          = "prod-subnet"
+  region        = var.prod_region
+  network       = google_compute_network.vpc.id
+  ip_cidr_range = "10.0.2.0/24"
 }
 
 resource "google_service_account" "gke-sa" {
@@ -46,92 +49,66 @@ resource "google_service_account" "gke-sa" {
   display_name = "GKE Service Account"
 }
 
-resource "google_container_cluster" "dev-cluster" {
-  name     = "dev-cluster"
-  location = "us-east1-c"
-  remove_default_node_pool = true
-  initial_node_count       = 2
-  network = google_compute_network.vpc.self_link
-  subnetwork = google_compute_subnetwork.dev-subnet.self_link
+module "dev-cluster" {
+  source     = "./modules/gke_cluster"
+  name       = "dev-cluster"
+  location   = var.dev_zone
+  network    = google_compute_network.vpc.self_link
+  subnetwork = module.dev-subnet.self_link
 }
 
-resource "google_container_node_pool" "dev_preemptible_nodes" {
-  name       = "dev-node-pool"
-  location   = "us-east1-c"
-  cluster    = google_container_cluster.dev-cluster.name
-  autoscaling {
-    min_node_count = 1
-    max_node_count = 3
-  }
+module "dev_preemptible_nodes" {
+  source          = "./modules/node_pool"
+  name            = "dev-node-pool"
+  location        = var.dev_zone
+  cluster         = module.dev-cluster.name
+  initial_node_count = 2
+  min_node_count  = 1
+  max_node_count  = 3
+  preemptible     = true
+  machine_type    = "e2-medium"
+  service_account = google_service_account.gke-sa.email
 
-  node_config {
-    preemptible  = true
-    machine_type = "e2-medium"
-
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = google_service_account.gke-sa.email
-    oauth_scopes    = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-  }
 }
 
-resource "google_container_cluster" "stage-cluster" {
-  name     = "stage-cluster"
-  location = "us-west1-c"
-  remove_default_node_pool = true
-  initial_node_count       = 2
-  network = google_compute_network.vpc.self_link
-  subnetwork = google_compute_subnetwork.stage-subnet.self_link
+module "stage-cluster" {
+  source     = "./modules/gke_cluster"
+  name       = "stage-cluster"
+  location   = var.stage_zone
+  network    = google_compute_network.vpc.self_link
+  subnetwork = module.stage-subnet.self_link
 }
 
-resource "google_container_node_pool" "stage_preemptible_nodes" {
-  name       = "stage-node-pool"
-  location   = "us-west1-c"
-  cluster    = google_container_cluster.stage-cluster.name
-  autoscaling {
-    min_node_count = 1
-    max_node_count = 3
-  }
-
-  node_config {
-    preemptible  = true
-    machine_type = "e2-medium"
-
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = google_service_account.gke-sa.email
-    oauth_scopes    = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-  }
+module "stage_preemptible_nodes" {
+  source          = "./modules/node_pool"
+  name            = "stage-node-pool"
+  location        = var.stage_zone
+  cluster         = module.stage-cluster.name
+  initial_node_count = 2
+  min_node_count  = 1
+  max_node_count  = 3
+  preemptible     = true
+  machine_type    = "e2-medium"
+  service_account = google_service_account.gke-sa.email
 }
 
-resource "google_container_cluster" "prod-cluster" {
-  name     = "prod-cluster"
-  location = "us-central1-c"
-  remove_default_node_pool = true
-  initial_node_count       = 2
-  network = google_compute_network.vpc.self_link
-  subnetwork = google_compute_subnetwork.prod-subnet.self_link
+module "prod-cluster" {
+  source     = "./modules/gke_cluster"
+  name       = "prod-cluster"
+  location   = var.prod_zone
+  network    = google_compute_network.vpc.self_link
+  subnetwork = module.prod-subnet.self_link
 }
 
-resource "google_container_node_pool" "prod_preemptible_nodes" {
-  name       = "prod-node-pool"
-  location   = "us-central1-c"
-  cluster    = google_container_cluster.prod-cluster.name
-  autoscaling {
-    min_node_count = 1
-    max_node_count = 3
-  }
-
-  node_config {
-    preemptible  = true
-    machine_type = "e2-medium"
-
-    # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
-    service_account = google_service_account.gke-sa.email
-    oauth_scopes    = [
-      "https://www.googleapis.com/auth/cloud-platform"
-    ]
-  }
+module "prod_preemptible_nodes" {
+  source          = "./modules/node_pool"
+  name            = "prod-node-pool"
+  location        = var.prod_zone
+  cluster         = module.prod-cluster.name
+  initial_node_count = 2
+  min_node_count  = 1
+  max_node_count  = 3
+  preemptible     = true
+  machine_type    = "e2-medium"
+  service_account = google_service_account.gke-sa.email
 }
